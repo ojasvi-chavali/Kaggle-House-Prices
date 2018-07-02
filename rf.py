@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
 PATH = "C:/Users/ckoja/.kaggle/competitions/house-prices-advanced-regression-techniques/"
 
@@ -32,3 +34,42 @@ combined_data = pd.concat((dataframe, testing_set)).reset_index(drop=True)
 train = combined_data[:dataframe.shape[0]]
 test = combined_data[dataframe.shape[0]:]
 
+# RF
+
+# Extract numeric variables for baseline model
+numeric_variables = list(dataframe.dtypes[dataframe.dtypes != "object"].index)
+
+# Fitting baseline model as a start
+print("fitting baseline model on just numerical values...")
+modelBaseline = RandomForestRegressor(n_jobs=-1, oob_score=True, random_state=42)
+modelBaseline.fit(train[numeric_variables], labels)
+print(" ")
+rocBaseline = roc_auc_score(labels, modelBaseline.oob_prediction_)
+print("C-Stat: ", rocBaseline)
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Fitting tuned model after parametric testing
+print("fitting tuned model on full dataset...")
+model = RandomForestRegressor(n_estimators=100, min_samples_leaf=15, max_depth=10, n_jobs=-1, max_features=0.2, oob_score=True, random_state=42)
+model.fit(train, labels)
+print(" ")
+roc = roc_auc_score(labels, model.oob_prediction_)
+print("C-Stat: ", roc)
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Using GridSearch to analysing ideal model parameters
+print("Using GridSearch to extract ideal parameter values")
+param_grid = {
+    "n_estimators": [2, 10, 25, 50, 75, 100, 125, 150],
+    "max_features": ['sqrt', 0.1, 0.2, 0.3, 0.4, 0.5],
+    "max_depth": [1, 5, 10, 15, 20, 25],
+    "min_samples_leaf": [1, 2, 4, 6, 8, 10, 15, 20, 25]
+}
+
+grid_model = RandomForestRegressor(n_jobs=-1, oob_score=True, random_state=42)
+
+CV_model = GridSearchCV(estimator=grid_model, param_grid=param_grid, cv=5)
+CV_model.fit(train_features, train_labels)
+
+print(CV_model.best_params_)
+# ----------------------------------------------------------------------------------------------------------------------
