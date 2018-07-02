@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.grid_search import GridSearchCV
 
 PATH = "C:/Users/ckoja/.kaggle/competitions/house-prices-advanced-regression-techniques/"
 
@@ -15,7 +16,8 @@ dataframe= dataframe[dataframe.columns[dataframe.isnull().mean() < 0.70]]
 
 print('The shape of our features now is:', dataframe.shape)
 
-#dataframe.dropna(inplace=True)
+# HAVE TO REMOVE NANS - BETTER WAY TO DO THIS
+dataframe.dropna(inplace=True)
 print('The shape of our features after dropping null valued rows is:', dataframe.shape)
 
 # Separate target variable for testing
@@ -28,7 +30,6 @@ combined_data = pd.concat((dataframe, testing_set)).reset_index(drop=True)
 
 # VARIABLE ENCODING, IMPUTATION, FEATURE ENGINEERING GOES HERE
 # Use combined data to edit features so that both train and test are ready
-#
 
 # Split data back to training and testing
 train = combined_data[:dataframe.shape[0]]
@@ -44,17 +45,18 @@ print("fitting baseline model on just numerical values...")
 modelBaseline = RandomForestRegressor(n_jobs=-1, oob_score=True, random_state=42)
 modelBaseline.fit(train[numeric_variables], labels)
 print(" ")
-rocBaseline = roc_auc_score(labels, modelBaseline.oob_prediction_)
-print("C-Stat: ", rocBaseline)
+
+# RMSE? KFOLD?
 # ----------------------------------------------------------------------------------------------------------------------
 
-# Fitting tuned model after parametric testing
+# Fitting tuned model after parametric testing based on gridsearch
 print("fitting tuned model on full dataset...")
 model = RandomForestRegressor(n_estimators=100, min_samples_leaf=15, max_depth=10, n_jobs=-1, max_features=0.2, oob_score=True, random_state=42)
-model.fit(train, labels)
+#Once NaNs are removed
+#model.fit(train, labels)
 print(" ")
-roc = roc_auc_score(labels, model.oob_prediction_)
-print("C-Stat: ", roc)
+
+# RMSE? KFOLD?
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Using GridSearch to analysing ideal model parameters
@@ -69,7 +71,6 @@ param_grid = {
 grid_model = RandomForestRegressor(n_jobs=-1, oob_score=True, random_state=42)
 
 CV_model = GridSearchCV(estimator=grid_model, param_grid=param_grid, cv=5)
-CV_model.fit(train_features, train_labels)
 
-print(CV_model.best_params_)
+#print(CV_model.best_params_)
 # ----------------------------------------------------------------------------------------------------------------------
